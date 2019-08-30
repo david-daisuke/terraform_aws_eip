@@ -10,13 +10,12 @@ resource "aws_eip" "default" {
   vpc      = true
 }
 
-# Our default security group to access
-# the instances over SSH and HTTP
+# デフォルトのセキュリティグループを作成します
 resource "aws_security_group" "default" {
   name        = "eip_example"
   description = "Used in the terraform"
 
-  # SSH access from anywhere
+  # SSH を許可
   ingress {
     from_port   = 22
     to_port     = 22
@@ -24,7 +23,7 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTP access from anywhere
+  # HTTP を許可
   ingress {
     from_port   = 80
     to_port     = 80
@@ -32,7 +31,7 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # outbound internet access
+  # アウトバウンドはすべて許可
   egress {
     from_port   = 0
     to_port     = 0
@@ -44,8 +43,7 @@ resource "aws_security_group" "default" {
 resource "aws_instance" "web" {
   instance_type = "t1.micro"
 
-  # Lookup the correct AMI based on the region
-  # we specified　　
+  # インスタンスに使うリージョンとイメージをvariables.tfから引っ張ってきます
   ami = "${lookup(var.aws_amis, var.aws_region)}"
 
 
@@ -53,10 +51,10 @@ resource "aws_instance" "web" {
   # 上記のURLからキーペアを作成してください。terraform apply　を打鍵したときにキーペアの名前を求められます
   key_name = "${var.key_name}"
 
-  # Our Security group to allow HTTP and SSH access
+  # セキュリティグループの設定
   security_groups = ["${aws_security_group.default.name}"]
 
-  #インスタンスを作成したら、nginx ダウンロードしてインストールしますこのときのポート番号は80
+  #インスタンスを作成したら、userdata.shを起動して、nginx ダウンロードしてインストールしますこのときのポート番号は80
   user_data = "${file("userdata.sh")}"
 
   #Instance tags
